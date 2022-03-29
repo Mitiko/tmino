@@ -9,14 +9,13 @@ extern crate bmp;
 use bmp::{Image, Pixel};
 
 mod fillings;
-use fillings::{t1, t2, t3, t4, t5, t6, t7, t8, get_gap_index};
-use fillings::{u1, u2, u3, u4, u5, u6, u7, u8};
+use fillings::{get_gap_index, try_fill, unfill};
 
 pub const X_MAX: usize = 23;
 pub const Y_MAX: usize = 24;
 
 #[derive(Debug, Clone, Copy)]
-enum TMino {
+pub enum TMino {
     T0, T1, T2, T3, T4, T5, T6, T7, T8
 }
 
@@ -40,64 +39,16 @@ impl TMino {
             TMino::T7 => None
         }
     }
-
-    #[must_use]
-    fn apply(&self, pos: Pos, a: &mut [Vec<u16>], idx: u16) -> bool {
-        match self {
-            TMino::T0 => false,
-            TMino::T1 => t1(pos.x, pos.y, a, idx),
-            TMino::T2 => t2(pos.x, pos.y, a, idx),
-            TMino::T3 => t3(pos.x, pos.y, a, idx),
-            TMino::T4 => t4(pos.x, pos.y, a, idx),
-            TMino::T5 => t5(pos.x, pos.y, a, idx),
-            TMino::T6 => t6(pos.x, pos.y, a, idx),
-            TMino::T7 => t7(pos.x, pos.y, a, idx),
-            TMino::T8 => t8(pos.x, pos.y, a, idx)
-        }
-    }
-
-    fn unapply(&self, pos: Pos, a: &mut [Vec<u16>]) {
-        match self {
-            TMino::T0 => { },
-            TMino::T1 => u1(pos.x, pos.y, a),
-            TMino::T2 => u2(pos.x, pos.y, a),
-            TMino::T3 => u3(pos.x, pos.y, a),
-            TMino::T4 => u4(pos.x, pos.y, a),
-            TMino::T5 => u5(pos.x, pos.y, a),
-            TMino::T6 => u6(pos.x, pos.y, a),
-            TMino::T7 => u7(pos.x, pos.y, a),
-            TMino::T8 => u8(pos.x, pos.y, a)
-        }
-    }
 }
 
 fn main() {
     let mut a: Vec<Vec<u16>> = vec![vec![0; Y_MAX]; X_MAX];
     let mut stack: Vec<(TMino, Pos)> = Vec::with_capacity(100);
 
-    let mut i = 0;
     // start backtracking:
     stack.push((TMino::T0, Pos { x: 0, y: 0 }));
     'outer:
     loop {
-        // track stack len
-        println!("Depth: {}", stack.len());
-        if stack.len() >= 88 && i == 0 {
-            i += 1;
-            draw(&a, "depth-88");
-        }
-        if stack.len() >= 89 && i == 1 {
-            i += 1;
-            draw(&a, "depth-89");
-        }
-        if stack.len() >= 90 && i == 2 {
-            i += 1;
-            draw(&a, "depth-90");
-        }
-        if stack.len() >= 91 && i == 3 {
-            i += 1;
-            draw(&a, "depth-91");
-        }
         let top = stack.pop();
         if top.is_none() { println!("Impossible!"); break; }
 
@@ -105,7 +56,7 @@ fn main() {
         while let Some(curr) = tmino.next() {
             tmino = curr;
             let idx = stack.len() as u16 + 1;
-            if curr.apply(pos, &mut a, idx) {
+            if try_fill(pos, &mut a, idx, curr) {
                 // if gap index not found, we're done
                 // TODO: if t1 or t3, optim search by starting a bit on the right
                 if let Some(gap_index) = get_gap_index(pos.x, pos.y, &mut a) {
@@ -124,7 +75,7 @@ fn main() {
         let top = stack.last();
         if top.is_none() { println!("Impossible! 2"); break; }
         let &(tmino, pos) = top.unwrap();
-        tmino.unapply(pos, &mut a);
+        unfill(pos, &mut a, tmino);
     }
 }
 
