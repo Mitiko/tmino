@@ -1,34 +1,23 @@
-use crate::{Pos, X_MAX, Y_MAX, TMino};
+use crate::{Pos, TMino, X_MAX, Y_MAX};
 
-// OR:
-// 0 0 -> 0
-// 0 1 -> 1
-// 1 0 -> 1
-// 1 1 -> 1
 #[must_use]
-pub fn try_fill(pos: Pos, a: &mut [Vec<u16>], idx: u16, tmino: TMino) -> bool {
+pub fn try_fill(pos: Pos, tmino: TMino, a: &mut [Vec<bool>]) -> bool {
     let x = pos.x;
     let y = pos.y;
 
     // TODO: Use TT Munchers
     macro_rules! fill_table {
-        (($a:literal, $b:literal) $($tail:tt)*) => {
-            fill_table!(a[x+$a][y+$b], $($tail)* a[x+$a][y+$b] = idx)
-        };
-        ($empty_check:expr, ($a:literal, -$b:literal) $($tail:tt)*) => {
-            fill_table!($empty_check | a[x+$a][y-$b], $($tail)* a[x+$a][y-$b] = idx)
-        };
+        ((0, 0) $($tail:tt)*) => { fill_table!(a[x][y], $($tail)* a[x][y] = true) };
+
         ($empty_check:expr, (-$a:literal, $b:literal) $($tail:tt)*) => {
-            fill_table!($empty_check | a[x-$a][y+$b], $($tail)* a[x-$a][y+$b] = idx)
-        };
-        ($empty_check:expr, (-$a:literal, -$b:literal) $($tail:tt)*) => {
-            fill_table!($empty_check | a[x-$a][y-$b], $($tail)* a[x-$a][y-$b] = idx)
+            fill_table!($empty_check || a[x-$a][y+$b], $($tail)* a[x-$a][y+$b] = true)
         };
         ($empty_check:expr, ($a:literal, $b:literal) $($tail:tt)*) => {
-            fill_table!($empty_check | a[x+$a][y+$b], $($tail)* a[x+$a][y+$b] = idx)
+            fill_table!($empty_check || a[x+$a][y+$b], $($tail)* a[x+$a][y+$b] = true)
         };
+
         ($empty_check:expr, $($fill_stmt:stmt)+) => {
-            if $empty_check != 0 { return false; }
+            if $empty_check { return false; }
             $($fill_stmt)+
         };
     }
@@ -74,23 +63,18 @@ pub fn try_fill(pos: Pos, a: &mut [Vec<u16>], idx: u16, tmino: TMino) -> bool {
     true
 }
 
-pub fn unfill(pos: Pos, a: &mut [Vec<u16>], tmino: TMino) {
+pub fn unfill(pos: Pos, tmino: TMino, a: &mut [Vec<bool>]) {
     let x = pos.x;
     let y = pos.y;
 
     macro_rules! unfill_table {
-        (($a:literal, -$b:literal) $($tail:tt)*) => {
-            unfill_table!($($tail)* a[x+$a][y-$b] = 0)
-        };
         ((-$a:literal, $b:literal) $($tail:tt)*) => {
-            unfill_table!($($tail)* a[x-$a][y+$b] = 0)
-        };
-        ((-$a:literal, -$b:literal) $($tail:tt)*) => {
-            unfill_table!($($tail)* a[x-$a][y-$b] = 0)
+            unfill_table!($($tail)* a[x-$a][y+$b] = false)
         };
         (($a:literal, $b:literal) $($tail:tt)*) => {
-            unfill_table!($($tail)* a[x+$a][y+$b] = 0)
+            unfill_table!($($tail)* a[x+$a][y+$b] = false)
         };
+
         ($($unfill_stmt:stmt)+) => {
             $($unfill_stmt)+
         };
@@ -107,19 +91,4 @@ pub fn unfill(pos: Pos, a: &mut [Vec<u16>], tmino: TMino) {
         TMino::T8 => { unfill_table!((0, 0) (0, 1) (0, 2) (0, 3) (1, 3) (0, 4));    },
         _ => { }
     }
-}
-
-#[allow(clippy::needless_range_loop)]
-pub fn get_gap_index(x: usize, y: usize, a: &mut [Vec<u16>]) -> Option<Pos> {
-    // first check till end of line
-    for x_pos in x..X_MAX {
-        if a[x_pos][y] == 0 { return Some(Pos { x: x_pos, y }); }
-    }
-
-    for y_pos in (y+1)..Y_MAX {
-        for x_pos in 0..X_MAX {
-            if a[x_pos][y_pos] == 0 { return Some(Pos { x: x_pos, y: y_pos }); }
-        }
-    }
-    None
 }
