@@ -1,9 +1,11 @@
-use crate::{Pos, TMino, X_MAX, Y_MAX};
+use crate::{Pos, TMino};
 
 #[must_use]
 pub fn try_fill(pos: Pos, tmino: TMino, a: &mut [Vec<bool>]) -> bool {
     let x = pos.x;
     let y = pos.y;
+    let x_max = a.len();
+    let y_max = a[0].len();
 
     // TODO: Use TT Munchers
     macro_rules! fill_table {
@@ -24,35 +26,35 @@ pub fn try_fill(pos: Pos, tmino: TMino, a: &mut [Vec<bool>]) -> bool {
 
     match tmino {
         TMino::T1 => {
-            if x + 4 >= X_MAX || y + 1 >= Y_MAX { return false; }
+            if x + 4 >= x_max || y + 1 >= y_max { return false; }
             fill_table!((0, 0) (1, 0) (1, 1) (2, 0) (3, 0) (4, 0));
         },
         TMino::T2 => {
-            if x == 0 || x + 3 >= X_MAX || y + 1 >= Y_MAX { return false; }
+            if x == 0 || x + 3 >= x_max || y + 1 >= y_max { return false; }
             fill_table!((0, 0) (-1, 1) (0, 1) (1, 1) (2, 1) (3, 1));
         },
         TMino::T3 => {
-            if x + 4 >= X_MAX || y + 1 >= Y_MAX { return false; }
+            if x + 4 >= x_max || y + 1 >= y_max { return false; }
             fill_table!((0, 0) (1, 0) (2, 0) (3, 0) (3, 1) (4, 0));
         },
         TMino::T4 => {
-            if x <= 2 || x + 1 >= X_MAX || y + 1 >= Y_MAX { return false; }
+            if x <= 2 || x + 1 >= x_max || y + 1 >= y_max { return false; }
             fill_table!((0, 0) (0, 1) (1, 1) (-1, 1) (-2, 1) (-3, 1));
         },
         TMino::T5 => {
-            if x == 0 || y + 4 >= Y_MAX { return false; }
+            if x == 0 || y + 4 >= y_max { return false; }
             fill_table!((0, 0) (0, 1) (-1, 1) (0, 2) (0, 3) (0, 4));
         },
         TMino::T6 => {
-            if x + 1 >= X_MAX || y + 4 >= Y_MAX { return false; }
+            if x + 1 >= x_max || y + 4 >= y_max { return false; }
             fill_table!((0, 0) (0, 1) (1, 1) (0, 2) (0, 3) (0, 4));
         },
         TMino::T7 => {
-            if x == 0 || y + 4 >= Y_MAX { return false; }
+            if x == 0 || y + 4 >= y_max { return false; }
             fill_table!((0, 0) (0, 1) (0, 2) (0, 3) (-1, 3) (0, 4));
         },
         TMino::T8 => {
-            if x + 1 >= X_MAX || y + 4 >= Y_MAX { return false; }
+            if x + 1 >= x_max || y + 4 >= y_max { return false; }
             fill_table!((0, 0) (0, 1) (0, 2) (0, 3) (1, 3) (0, 4));
         },
         _ => {

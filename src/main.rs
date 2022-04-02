@@ -10,39 +10,41 @@ mod drawing;
 
 use tmino::{TMino, Pos};
 use fillings::{try_fill, unfill};
-use gap_finder::get_gap_index;
+use gap_finder::{load_gap_optims, get_gap_index};
 use drawing::draw;
 
-pub const X_MAX: usize = 23;
-pub const Y_MAX: usize = 24;
-
 fn main() {
-    let mut cells = vec![vec![false; Y_MAX]; X_MAX];
+    let gap_mm = load_gap_optims(50);
+    dbg!(gap_mm[0]);
+    std::process::exit(1);
+
+    let x_max = 23;
+    let y_max = 24;
+    let mut cells = vec![vec![false; y_max]; x_max];
     let mut stack: Vec<(TMino, Pos)> = Vec::with_capacity(100);
     // LOAD invalid gaps
 
     stack.push((TMino::T0, Pos::new(0, 0)));
-    'outer:
-    loop {
-        let (tmino, pos) = stack.pop().expect("Impossible.. like fr");
+    'outer: loop {
+        let (tmino, pos) = stack.pop().unwrap();
 
         for curr in tmino.iter() {
             if !try_fill(pos, curr, &mut cells) { continue; }
             stack.push((curr, pos));
 
-            if let Some(gap_index) = get_gap_index(pos, &cells) {
-                stack.push((TMino::T0, gap_index));
-                continue 'outer;
+            match get_gap_index(pos, &cells) {
+                Some(gap_index) => stack.push((TMino::T0, gap_index)),
+                None => draw(&stack, "solution"),
             }
-            else {
-                draw(&stack, "solution");
-                break 'outer;
-            }
+            continue 'outer; // Calling draw terminates the program
         }
 
-        let &(tmino, pos) = stack.last().expect("Impossible 2");
-        unfill(pos, tmino, &mut cells);
+        match stack.last() {
+            Some(&(tmino, pos)) => unfill(pos, tmino, &mut cells),
+            None => break,
+        }
     }
 
-    println!("Done! Filled!");
+    // If solutions are found, a bmp will be generated and the program will exit
+    println!("No solutions found!");
 }

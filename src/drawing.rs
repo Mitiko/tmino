@@ -1,35 +1,58 @@
 use bmp::{Image, Pixel};
 use rand::Rng;
 
-use crate::{Pos, TMino, X_MAX, Y_MAX};
+use crate::{Pos, TMino};
+const COLORS: [(u8, u8, u8); 23] = [
+    (255, 255, 255),
+    (0, 0, 0),
+    (0, 255, 221),
+    (166, 255, 0),
+    (255, 0, 255),
+    (255, 230, 0),
+    (171, 0, 0),
+    (0, 162, 255),
+    (255, 0, 0),
+    (0, 17, 255),
+    (90, 139, 0),
+    (210, 105, 30),
+    (90, 139, 0),
+    (0, 8, 114),
+    (0, 175, 152),
+    (85, 0, 141),
+    (166, 255, 0),
+    (255, 230, 0),
+    (255, 174, 0),
+    (255, 174, 0),
+    (153, 0, 255),
+    (255, 0, 0),
+    (168, 0, 168)
+];
 
 pub fn draw(stack: &[(TMino, Pos)], name: &str) {
+    println!("Found solution!");
+
     // TODO: Use a fixed set of colors
     let mut rng = rand::thread_rng();
-    let mut colors = vec![(0, 0, 0); 1_000];
-    for c in colors.iter_mut() {
-        let r = rng.gen_range(0..=255);
-        let g = rng.gen_range(0..=255);
-        let b = rng.gen_range(0..=255);
-        *c = (r, g, b);
-    }
-    colors[0] = (255, 255, 255);
 
-    let mut img = Image::new(X_MAX as u32, Y_MAX as u32);
-    let a = apply_stack(stack);
-    for x in 0..X_MAX {
-        for y in 0..Y_MAX {
-            let (r, g, b) = colors[a[x][y] as usize];
+    let x_max = 23;
+    let y_max = 24;
+    let mut img = Image::new(x_max as u32, y_max as u32);
+    let mut grid = vec![vec![0; y_max]; x_max];
+    apply_stack(stack, &mut grid);
+    for (x, col) in grid.iter().enumerate() {
+        for (y, &pix) in col.iter().enumerate() {
+            let (r, g, b) = COLORS[pix as usize];
             img.set_pixel(x as u32, y as u32, px!(r, g, b));
         }
     }
     let id: u32 = rng.gen_range(0..1000);
     let _ = img.save(format!("{name}-{id}.bmp"));
+
+    // Terminate the program
+    std::process::exit(1);
 }
 
-fn apply_stack(stack: &[(TMino, Pos)]) -> Vec<Vec<u16>> {
-    let mut a = vec![vec![0; Y_MAX]; X_MAX];
-
+fn apply_stack(stack: &[(TMino, Pos)], a: &mut[Vec<u16>]) {
     macro_rules! draw {
         ($pos:ident, $c:ident, (0, 0) $($tail:tt)*) => {
             draw!($pos, $c, $($tail)* a[$pos.x][$pos.y] = $c)
@@ -47,7 +70,8 @@ fn apply_stack(stack: &[(TMino, Pos)]) -> Vec<Vec<u16>> {
     }
 
     for (c, &(tmino, pos)) in stack.iter().enumerate() {
-        let c = (c + 1) as u16;
+        let c = c % (COLORS.len() - 2) + 2;
+        let c = c as u16;
 
         match tmino {
             TMino::T1 => { draw!(pos, c, (0, 0) (1, 0) (1, 1) (2, 0) (3, 0) (4, 0));    },
@@ -61,6 +85,27 @@ fn apply_stack(stack: &[(TMino, Pos)]) -> Vec<Vec<u16>> {
             _ => { }
         }
     }
+}
 
-    a
+pub fn draw_optim(stack: &[(TMino, Pos)], cells: &[Vec<bool>], name: &str) {
+    // TODO: Use a fixed set of colors
+    let mut rng = rand::thread_rng();
+
+    let x_max = cells.len();
+    let y_max = cells[0].len();
+    let mut img = Image::new(x_max as u32, y_max as u32);
+    let mut grid = vec![vec![0; y_max]; x_max];
+    apply_stack(stack, &mut grid);
+    for (x, col) in grid.iter().enumerate() {
+        for (y, &pix) in col.iter().enumerate() {
+            let color = if pix == 0 { cells[x][y] as usize }
+            else { pix as usize };
+
+            let (r, g, b) = COLORS[color];
+            img.set_pixel(x as u32, y as u32, px!(r, g, b));
+        }
+    }
+
+    let id: u32 = rng.gen_range(0..1000);
+    let _ = img.save(format!("{name}-{id}.bmp"));
 }
