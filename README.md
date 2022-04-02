@@ -9,8 +9,9 @@ but the base version of it uses a specific t-polymino of size 6.
 
 ## How to draw the solution
 
-If a solution is found, an image solution-****.bmp will be generated where each pixel in the bitmap is a cell in the grid.  
-To upscale the image you can use imagemagick with `convert in.bmp -filter point -resize 230x240 out.jpg` and you can substitute the desired image dimensions. (Cool trick - you can get some cool blurry art if you omit -filter point).
+If a solution is found, an image solution-<digits>.bmp will be generated where each pixel in the bitmap is a cell in the grid.  
+To upscale the image you can use imagemagick with `convert in.bmp -filter point -resize 1200x1200 out.jpg` and you can substitute the desired image dimensions. (Cool trick - you can get some cool blurry art if you omit -filter point).  
+To do it in batches you could also do `mogrify -filter point -resize 1200x1200 -format jpg *.bmp && rm *.bmp`
 
 ## How to change the polymino
 
